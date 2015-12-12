@@ -1,0 +1,114 @@
+<!DOCTYPE HTML>
+<html ng-app="friends_app" lang="en">
+<head>
+    <title>Full Mean Demo="support tag from-rainbow"</title>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/skeleton.css">
+    <!-- <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css"> -->
+
+
+    <!-- require angular -->
+    <script src="/angular/angular.min.js"></script>
+    <script src="/angular/angular-route.min.js"></script>
+    <script type="text/javascript">
+    // PUT ANGULAR CODE HERE
+    var friends_app = angular.module('friends_app', []);
+    // FACTORY
+    // notice the $http in the function
+    friends_app.factory('friendFactory', function($http) {
+        var factory = {};
+        var friends = [];
+        factory.getFriends = function(callback) {
+            // Where do we get access to $http?
+            // http request to a url on our back end
+            // runs a function when successful as it gets the data
+            $http.get('/friends').success(function (output) {
+                // The output recieved comes from the /friends response
+                // /friends calls a method and that methods sends a response back
+                friends = output;
+                callback(friends);
+            })
+        }
+        // note the use of callbacks
+        factory.addFriend = function(info, callback) {
+            console.log(info);
+            $http.post('/create_friend', info).success(function (output) {
+                // console.log(output);
+                // output returned is actually itself because of the redirect
+            });
+            callback();
+        }
+
+        factory.removeFriend = function(info, callback) {
+            console.log('1) FACTORY - Remove Friend:', info);
+            $http.post('/remove_friend', info).success(function (output) {});
+            callback();
+        }
+        return factory;
+    });
+    // CONTROLLER
+    friends_app.controller('FriendsController', function($scope, friendFactory) {
+        $scope.index = function() {
+            friendFactory.getFriends(function (data) {
+                $scope.friends = data;
+            });
+        }
+        $scope.addFriend = function() {
+            friendFactory.addFriend($scope.newFriend, function() {
+                // this function is the callback that is used in the factory.addFriend method
+                // clears out the newFriend model
+                $scope.newFriend = {};
+                $scope.index()
+            });
+        }
+        $scope.removeFriend = function(friend) {
+            friendFactory.removeFriend(friend, function() {
+                $scope.index();
+            })
+        }
+
+        $scope.index()
+    });
+    </script>
+</head>
+<body ng-controller="FriendsController">
+    <div class='container'>
+        <h4>Add a friend</h4>
+        <div class='row'>
+            <!-- objects and properties -->
+            <div class="four columns">
+                <input class='u-full-width' type="text" ng-model="newFriend.name" placeholder="name">
+            </div>
+            <div class="four columns">
+                <input class='u-full-width' type="number" ng-model="newFriend.age" placeholder="age">
+            </div>
+            <!-- addfriend() is a method we are going to make in the angular controller -->
+            <div class="four columns">
+                <input class='button-primary' type="submit" ng-click="addFriend()" value='Submit!'>
+            </div>
+        </div>
+        <hr>
+        <h4>Friends</h4>
+        <input type="text" ng-model="filter_name" placeholder="filter">
+        <!-- this is where we are going to display friends -->
+        <table class="u-full-width">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="friend in friends | filter: filter_name">
+                    <td ng-bind="friend.name"></td>
+                    <td ng-bind="friend.age"></td>
+                    <td><button ng-click="removeFriend(friend)">Remove</button></td>
+                </tr>   
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
